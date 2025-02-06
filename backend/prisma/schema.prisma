@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Estado {
+  ACTIVO
+  INACTIVO
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+}
+
+model Marca {
+  id          Int        @id @default(autoincrement())
+  descripcion String     @unique
+  estado      Estado     @default(ACTIVO)
+  Modelo      Modelo[]
+  Vehiculo    Vehiculo[]
+}
+
+model Modelo {
+  id          Int        @id @default(autoincrement())
+  marca       Marca      @relation(fields: [marcaId], references: [id], onDelete: Cascade)
+  marcaId     Int
+  descripcion String     @unique
+  estado      Estado     @default(ACTIVO)
+  Vehiculo    Vehiculo[]
+}
+
+model TipoVehiculo {
+  id          Int        @id @default(autoincrement())
+  descripcion String     @unique
+  estado      Estado     @default(ACTIVO)
+  Vehiculo    Vehiculo[]
+}
+
+model TipoCombustible {
+  id          Int        @id @default(autoincrement())
+  descripcion String     @unique
+  estado      Estado     @default(ACTIVO)
+  Vehiculo    Vehiculo[]
+}
+
+enum VehiculoEstado {
+  DISPONIBLE
+  SOLICITADO
+  RENTADO
+}
+
+model Vehiculo {
+  id                Int               @id @default(autoincrement())
+  descripcion       String
+  numChasis         String            @unique
+  numMotor          String            @unique
+  numPlaca          String            @unique
+  tipoVehiculo      TipoVehiculo      @relation(fields: [tipoVehiculoId], references: [id], onDelete: Cascade)
+  tipoVehiculoId    Int
+  marca             Marca             @relation(fields: [marcaId], references: [id], onDelete: Cascade)
+  marcaId           Int
+  modelo            Modelo            @relation(fields: [modeloId], references: [id], onDelete: Cascade)
+  modeloId          Int
+  tipoCombustible   TipoCombustible   @relation(fields: [tipoCombustibleId], references: [id], onDelete: Cascade)
+  tipoCombustibleId Int
+  estado            VehiculoEstado    @default(DISPONIBLE)
+  RentaDevolucion   RentaDevolucion[]
+  Inspeccion        Inspeccion[]
+}
+
+enum TipoPersona {
+  FISICA
+  JURIDICA
+}
+
+model Cliente {
+  id                Int               @id @default(autoincrement())
+  nombre            String
+  cedula            String            @unique
+  numTarjetaCredito String
+  limiteCredito     Int
+  tipoPersona       TipoPersona
+  estado            Estado            @default(ACTIVO)
+  RentaDevolucion   RentaDevolucion[]
+  Inspeccion        Inspeccion[]
+}
+
+enum TandaLaboral {
+  MATUTINA
+  VESPERTINA
+  NOCTURNA
+}
+
+model Empleado {
+  id                Int               @id @default(autoincrement())
+  nombre            String
+  cedula            String            @unique
+  tandaLaboral      TandaLaboral
+  porcientoComision Float
+  fechaIngreso      DateTime          @db.Date()
+  estado            Estado            @default(ACTIVO)
+  RentaDevolucion   RentaDevolucion[]
+  Inspeccion        Inspeccion[]
+}
+
+model Inspeccion {
+  id                  Int      @id @default(autoincrement())
+  vehiculo            Vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
+  vehiculoId          Int
+  cliente             Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  clienteId           Int
+  tieneRalladuras     Boolean
+  cantidadCombustible String
+  tieneGomaRepuesto   Boolean
+  tieneGato           Boolean
+  tieneRoturasCristal Boolean
+  estadoGomas         String
+  fecha               DateTime @db.Date()
+  empleado            Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+  empleadoId          Int
+  estado              Estado   @default(ACTIVO)
+}
+
+model RentaDevolucion { 
+  numRenta        Int      @id @default(autoincrement())
+  empleado        Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+  empleadoId      Int
+  vehiculo        Vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
+  vehiculoId      Int
+  cliente         Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  clienteId       Int
+  fechaRenta      DateTime @db.Date()
+  fechaDevolucion DateTime @db.Date()
+  montoPorDia     Int
+  cantidadDias    Int
+  comentario      String?
+  estado          Estado   @default(ACTIVO)
+}
